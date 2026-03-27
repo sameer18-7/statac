@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATAC — Cricket News</title>
+  <meta name="description" content="STATAC News — Live cricket news and updates from around the world.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="news.css">
+</head>
+<body>
+
+  <!-- ███ NAVBAR ███ -->
+  <nav class="navbar" id="navbar">
+    <a href="statac.html" class="nav-logo">STATAC <span class="logo-dot"></span></a>
+    <ul class="nav-links">
+      <li><a href="statac.html">Home</a></li>
+      <li><a href="player-analytics.html">Analytics</a></li>
+      <li><a href="compare.html">Compare</a></li>
+      <li><a href="news.html" class="active">News</a></li>
+    </ul>
+    <button class="nav-cta">Pro Access</button>
+  </nav>
+
+  <!-- ███ PAGE HEADER ███ -->
+  <section class="news-header">
+    <div class="news-tag">📰 LIVE FEED</div>
+    <h1 class="news-title">CRICKET <em>NEWS</em></h1>
+    <p class="news-sub">Latest updates, match reports, and breaking stories from the world of cricket</p>
+  </section>
+
+  <!-- ███ FILTER BAR ███ -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="cricket">Cricket</button>
+    <button class="filter-btn" data-filter="match">Match Updates</button>
+    <button class="filter-btn" data-filter="analysis">Analysis</button>
+  </div>
+
+  <!-- ███ LOADING SPINNER ███ -->
+  <div class="news-loading" id="news-loading">
+    <div class="spinner"></div>
+    <p>Fetching latest cricket news...</p>
+  </div>
+
+  <!-- ███ NEWS GRID ███ -->
+  <div class="news-grid" id="news-grid"></div>
+
+  <!-- ███ ERROR STATE ███ -->
+  <div class="news-error" id="news-error" style="display:none;">
+    <div class="error-icon">📡</div>
+    <h3>Unable to fetch live news</h3>
+    <p>Cricbuzz feed may be temporarily unavailable. Showing cached articles.</p>
+    <button class="retry-btn" onclick="fetchNews()">Retry</button>
+  </div>
+
+  <!-- ███ NEWS MODAL ███ -->
+  <div class="news-modal" id="news-modal">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Reading Article</h3>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-loader" id="modal-loader">
+          <div class="spinner"></div><p>Loading securely...</p>
+        </div>
+        <iframe class="news-iframe" id="news-iframe" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ███ FOOTER ███ -->
+  <footer class="footer">
+    <div class="foot-logo">STATAC <span class="logo-dot"></span></div>
+    <div class="foot-copy">© SamxSTATAC · News powered by Cricbuzz</div>
+  </footer>
+
+  <script src="news.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

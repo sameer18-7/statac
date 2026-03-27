@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATAC — Compare Players</title>
+  <meta name="description" content="STATAC Compare — Head-to-head player comparison with real cricket statistics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="compare.css">
+</head>
+<body>
+
+  <!-- ███ NAVBAR ███ -->
+  <nav class="navbar" id="navbar">
+    <a href="statac.html" class="nav-logo">STATAC <span class="logo-dot"></span></a>
+    <ul class="nav-links">
+      <li><a href="statac.html">Home</a></li>
+      <li><a href="player-analytics.html">Analytics</a></li>
+      <li><a href="compare.html" class="active">Compare</a></li>
+      <li><a href="news.html">News</a></li>
+    </ul>
+    <button class="nav-cta">Pro Access</button>
+  </nav>
+
+  <!-- ███ PAGE HEADER ███ -->
+  <section class="compare-header">
+    <div class="compare-header-tag">⚔️ HEAD TO HEAD</div>
+    <h1 class="compare-title">PLAYER <em>COMPARISON</em></h1>
+    <p class="compare-sub">Compare career statistics side-by-side across all formats</p>
+  </section>
+
+  <!-- ███ PLAYER SLOTS ███ -->
+  <div class="slots-bar">
+    <div class="player-slot active" id="slot-1">
+      <div class="slot-avatar" id="slot-avatar-1"><span id="slot-init-1">?</span></div>
+      <div class="slot-info">
+        <span class="slot-name" id="slot-name-1">Player 1</span>
+        <span class="slot-meta" id="slot-meta-1">Search to select</span>
+      </div>
+      <button class="slot-remove" id="slot-remove-1" title="Remove" style="display:none;">✕</button>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="player-slot" id="slot-2">
+      <div class="slot-avatar" id="slot-avatar-2"><span id="slot-init-2">?</span></div>
+      <div class="slot-info">
+        <span class="slot-name" id="slot-name-2">Player 2</span>
+        <span class="slot-meta" id="slot-meta-2">Search to select</span>
+      </div>
+      <button class="slot-remove" id="slot-remove-2" title="Remove" style="display:none;">✕</button>
+    </div>
+    <button class="add-player-btn" id="add-player-3" title="Add 3rd player">
+      <span class="add-icon">＋</span>
+      <span class="add-text">Add Player</span>
+    </button>
+    <div class="player-slot hidden" id="slot-3">
+      <div class="slot-avatar" id="slot-avatar-3"><span id="slot-init-3">?</span></div>
+      <div class="slot-info">
+        <span class="slot-name" id="slot-name-3">Player 3</span>
+        <span class="slot-meta" id="slot-meta-3">Search to select</span>
+      </div>
+      <button class="slot-remove" id="slot-remove-3" title="Remove 3rd">✕</button>
+    </div>
+  </div>
+
+  <!-- ███ SEARCH OVERLAY ███ -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-backdrop" id="searchBackdrop"></div>
+    <div class="search-panel">
+      <div class="search-bar-pill" id="searchBarPill">
+        <span class="search-icon-pill">🔍</span>
+        <input id="searchInput" type="text" placeholder="Search any player..." autocomplete="off">
+      </div>
+      <div class="search-suggestions" id="searchSuggestions"></div>
+    </div>
+  </div>
+
+  <!-- ███ COMPARISON CONTENT ███ -->
+  <main class="compare-main" id="compare-main" style="display:none;">
+
+    <!-- ─── TAB CONTROLS ─── -->
+    <div class="tab-controls">
+      <!-- Format Tabs (Center) -->
+      <div class="format-tabs" id="format-tabs">
+        <button class="fmt-tab active" data-format="Tests">Tests</button>
+        <button class="fmt-tab" data-format="ODIs">ODIs</button>
+        <button class="fmt-tab" data-format="T20Is">T20Is</button>
+        <button class="fmt-tab" data-format="First-class">FC</button>
+        <button class="fmt-tab" data-format="List A">List A</button>
+        <button class="fmt-tab" data-format="T20s">T20s</button>
+      </div>
+
+      <!-- Batting / Bowling Toggle (Right) -->
+      <div class="type-toggle">
+        <button class="type-btn active" data-type="BATTING">Batting</button>
+        <button class="type-btn" data-type="BOWLING">Bowling</button>
+      </div>
+    </div>
+
+    <!-- ─── SINGLE COMPARE TABLE ─── -->
+    <div class="table-container">
+      <table class="stat-table compare-table" id="compare-table">
+        <thead id="compare-thead"></thead>
+        <tbody id="compare-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Charts -->
+    <h3 class="section-heading" style="margin-top:48px;">VISUAL <em>BREAKDOWN</em></h3>
+    <div class="compare-charts-grid">
+      <div class="chart-card">
+        <h4 class="cc-title">International Runs</h4>
+        <div class="cc-body"><canvas id="chart-runs"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4 class="cc-title">Batting Averages</h4>
+        <div class="cc-body"><canvas id="chart-avg"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4 class="cc-title">Strike Rates</h4>
+        <div class="cc-body"><canvas id="chart-sr"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4 class="cc-title">Wickets</h4>
+        <div class="cc-body"><canvas id="chart-wkts"></canvas></div>
+      </div>
+      <div class="chart-card wide">
+        <h4 class="cc-title">Centuries & Fifties</h4>
+        <div class="cc-body"><canvas id="chart-milestones"></canvas></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ███ FOOTER ███ -->
+  <footer class="footer">
+    <div class="foot-logo">STATAC <span class="logo-dot"></span></div>
+    <div class="foot-copy">© SamxSTATAC</div>
+  </footer>
+
+  <script src="compare.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
