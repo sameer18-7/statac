@@ -216,7 +216,6 @@ def main():
     collection.create_index([("NAME", "text")])
     print("✅ Indexes created!")
 
-    # Summary
     total_count = collection.count_documents({})
     countries = len(collection.distinct("COUNTRY"))
 
