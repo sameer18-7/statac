@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATAC — ICC Rankings</title>
+  <meta name="description" content="STATAC Rankings — Official ICC Player Rankings for Test, ODI, and T20I cricket. Batting, Bowling, and All-rounder rankings.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/rankings.css">
+</head>
+<body>
+
+  <!-- ███ NAVBAR ███ -->
+  <nav class="navbar" id="navbar">
+    <a href="statac.html" class="nav-logo">STATAC <span class="logo-dot"></span></a>
+    <ul class="nav-links">
+      <li><a href="statac.html">Home</a></li>
+      <li><a href="player-analytics.html">Search</a></li>
+      <li><a href="rankings.html" class="active">Rankings</a></li>
+    </ul>
+    <button class="nav-cta">Pro Access</button>
+  </nav>
+
+  <!-- ███ PAGE HEADER ███ -->
+  <section class="rankings-header">
+    <div class="rankings-tag"><span class="pulse"></span> ICC OFFICIAL</div>
+    <h1 class="rankings-title">PLAYER <em>RANKINGS</em></h1>
+    <p class="rankings-sub">Official ICC player rankings across Test, ODI, and T20I formats — updated live from international cricket data.</p>
+  </section>
+
+  <!-- ███ CONTROLS ███ -->
+  <div class="controls-bar">
+    <div class="controls-group">
+      <!-- Gender Toggle -->
+      <div class="gender-toggle" id="genderToggle">
+        <button class="gender-btn men active" data-gender="men">🏏 Men's</button>
+        <button class="gender-btn women" data-gender="women">🏏 Women's</button>
+      </div>
+
+      <!-- Format Tabs -->
+      <div class="format-tabs" id="formatTabs">
+        <button class="format-tab active" data-format="odi">ODI</button>
+        <button class="format-tab" data-format="test">Test</button>
+        <button class="format-tab" data-format="t20i">T20I</button>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="category-tabs" id="categoryTabs">
+        <button class="category-tab active" data-category="batting">🏏 Batting</button>
+        <button class="category-tab" data-category="bowling">🎳 Bowling</button>
+        <button class="category-tab" data-category="allrounder">⭐ All-Rounder</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="rankings-search-bar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.35-4.35"></path>
+      </svg>
+      <input type="text" id="rankingsSearch" placeholder="Filter by player name or country..." autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <!-- ███ META BAR ███ -->
+  <div class="rankings-meta">
+    <span class="meta-count" id="metaCount"></span>
+    <span class="meta-source">Source: <a href="https://www.icc-cricket.com/rankings" target="_blank" rel="noopener">ICC Official Rankings</a></span>
+  </div>
+
+  <!-- ███ RANKINGS TABLE ███ -->
+  <div class="rankings-container">
+    <div class="rankings-table-wrap" id="rankingsTableWrap">
+
+      <!-- Loading -->
+      <div class="rankings-loading" id="rankingsLoading">
+        <div class="spinner"></div>
+        <p>Fetching ICC rankings...</p>
+      </div>
+
+      <!-- Error -->
+      <div class="rankings-error" id="rankingsError">
+        <div class="error-icon">📡</div>
+        <h3>Unable to fetch rankings</h3>
+        <p>The rankings service is temporarily unavailable. Please try again.</p>
+        <button class="retry-btn" id="retryBtn">Retry</button>
+      </div>
+
+      <!-- No results -->
+      <div class="no-results" id="noResults">
+        No players match your search.
+      </div>
+
+      <!-- Table header -->
+      <div class="table-header" id="tableHeader" style="display: none;">
+        <span>Rank</span>
+        <span>Player</span>
+        <span>Country</span>
+        <span>Rating</span>
+        <span>Trend</span>
+      </div>
+
+      <!-- Table body (rendered by JS) -->
+      <div id="tableBody"></div>
+
+    </div>
+  </div>
+
+  <!-- ███ FOOTER ███ -->
+  <footer class="footer">
+    <div class="foot-logo">STATAC <span class="logo-dot"></span></div>
+    <div class="foot-copy">© SamxSTATAC · Rankings data from ICC via Cricbuzz</div>
+  </footer>
+
+  <script src="js/rankings.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

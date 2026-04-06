@@ -6,45 +6,19 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/statac';
+const { dbPromise, getPlayersCollection } = require('./db');
 
 // ─── Middleware ──────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
 // Serve static frontend files (HTML, CSS, JS, images)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ─── MongoDB Connection ─────────────────────────────────────
-let db = null;
-let playersCollection = null;
-
-// Create a promise for db connection
-const dbPromise = (async () => {
-  try {
-    const client = new MongoClient(MONGO_URI);
-    await client.connect();
-    db = client.db('statac');
-    playersCollection = db.collection('players');
-
-    // Create indexes
-    await playersCollection.createIndex({ NAME: 'text' });
-    await playersCollection.createIndex({ NAME: 1 });
-    // Keep users email unique
-    await db.collection('users').createIndex({ email: 1 }, { unique: true });
-
-    console.log('✅ Connected to MongoDB');
-    return db;
-  } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message);
-    return null;
-  }
-})();
+app.use(express.static(path.join(__dirname, '../public')));
 
 async function connectDB() {
   await dbPromise;
@@ -54,54 +28,8 @@ async function connectDB() {
 const authRoutes = require('./routes/auth')(dbPromise);
 app.use('/api/auth', authRoutes);
 
-/**
- * GET /api/news/feed
- * Local proxy to fetch Cricbuzz RSS feed without CORS errors.
- */
-app.get('/api/news/feed', async (req, res) => {
-  try {
-    const response = await fetch('https://www.cricbuzz.com/cb-rss/cb-top-stories', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-    });
-    if (!response.ok) throw new Error('Failed to fetch RSS: ' + response.statusText);
-    const xml = await response.text();
-    res.set('Content-Type', 'text/xml');
-    res.send(xml);
-  } catch (err) {
-    console.error('RSS fetch error:', err);
-    res.status(500).json({ error: 'Failed to fetch news feed' });
-  }
-});
-
-/**
- * GET /api/news/proxy?url=YOUR_URL
- * Fetches Cricbuzz article HTML, strips restrictive headers, and injects a base URL.
- */
-app.get('/api/news/proxy', async (req, res) => {
-  try {
-    const targetUrl = req.query.url;
-    if (!targetUrl) return res.status(400).send('URL required');
-
-    const response = await fetch(targetUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-    });
-    
-    if (!response.ok) {
-      return res.status(response.status).send('External site Error');
-    }
-    
-    let html = await response.text();
-    // Inject <base> tag to correctly render relative stylesheets and images from Cricbuzz
-    const origin = new URL(targetUrl).origin;
-    html = html.replace(/<head>/i, '<head><base href="' + origin + '/">');
-
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
-  } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(500).send('Proxy Error');
-  }
-});
+const rankingsRoutes = require('./routes/rankings')(dbPromise);
+app.use('/api/rankings', rankingsRoutes);
 
 /**
  * GET /api/players/search?q=<query>&limit=<number>
@@ -109,6 +37,7 @@ app.get('/api/news/proxy', async (req, res) => {
  */
 app.get('/api/players/search', async (req, res) => {
   try {
+    const playersCollection = getPlayersCollection();
     if (!playersCollection) {
       return res.status(503).json({ error: 'Database not connected' });
     }
@@ -118,8 +47,9 @@ app.get('/api/players/search', async (req, res) => {
 
     let filter = {};
     if (query) {
-      // Case-insensitive prefix/substring search
-      filter = { NAME: { $regex: query, $options: 'i' } };
+      // Case-insensitive word-boundary search (anchored to name field only)
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter = { NAME: { $regex: `\\b${escaped}`, $options: 'i' } };
     }
 
     const players = await playersCollection
@@ -153,6 +83,7 @@ app.get('/api/players/search', async (req, res) => {
  */
 app.get('/api/player/:name', async (req, res) => {
   try {
+    const playersCollection = getPlayersCollection();
     if (!playersCollection) {
       return res.status(503).json({ error: 'Database not connected' });
     }
@@ -180,6 +111,7 @@ app.get('/api/player/:name', async (req, res) => {
  */
 app.get('/api/players/compare', async (req, res) => {
   try {
+    const playersCollection = getPlayersCollection();
     if (!playersCollection) {
       return res.status(503).json({ error: 'Database not connected' });
     }
@@ -211,6 +143,7 @@ app.get('/api/players/compare', async (req, res) => {
  */
 app.get('/api/stats', async (req, res) => {
   try {
+    const playersCollection = getPlayersCollection();
     if (!playersCollection) {
       return res.status(503).json({ error: 'Database not connected' });
     }
@@ -232,15 +165,13 @@ app.get('/api/stats', async (req, res) => {
 
 // ─── Catch-all: serve index for SPA-like navigation ─────────
 app.get('*', (req, res) => {
-  // If it's an API route that wasn't matched, return 404
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
-  // Otherwise try to serve the file from public
-  const filePath = path.join(__dirname, 'public', req.path);
+  const filePath = path.join(__dirname, '../public', req.path);
   res.sendFile(filePath, (err) => {
     if (err) {
-      res.sendFile(path.join(__dirname, 'public', 'statac.html'));
+      res.sendFile(path.join(__dirname, '../public', 'statac.html'));
     }
   });
 });

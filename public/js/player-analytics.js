@@ -30,11 +30,111 @@ document.addEventListener('DOMContentLoaded', function () {
   initializeImpactRing(impactScore);
   document.getElementById('impact-val').textContent = impactScore;
 
-  setTimeout(() => initializeCharts(p), 150);
+  setupTabs(p);
+  setTimeout(() => renderCharts(p, 'batting'), 150);
+  
   setupChartZoom();
   setupHeartButton(p.NAME || 'Unknown');
   initReveal();
 });
+
+function setupTabs(p) {
+  const tabs = document.querySelectorAll('.dash-tab');
+  tabs.forEach(t => {
+    t.addEventListener('click', function() {
+      // update active class
+      tabs.forEach(tab => tab.classList.remove('active'));
+      this.classList.add('active');
+      
+      const type = this.getAttribute('data-type');
+      updateTopStats(p, type);
+      renderCharts(p, type);
+    });
+  });
+}
+
+/* ═══════════ DYNAMIC TOP STATS (Batting ⟷ Bowling) ═══════════ */
+function updateTopStats(p, type) {
+  const phRunsEl = document.getElementById('ph-runs');
+  const phAvgEl = document.getElementById('ph-avg');
+  const phSrEl = document.getElementById('ph-sr');
+  const phRunsLbl = phRunsEl?.nextElementSibling;
+  const phAvgLbl = phAvgEl?.nextElementSibling;
+  const phSrLbl = phSrEl?.nextElementSibling;
+
+  const primeYrsEl = document.getElementById('prime-yrs');
+  const primeRunsEl = document.getElementById('prime-runs');
+  const primeAvgEl = document.getElementById('prime-avg');
+  const primeRunsLbl = primeRunsEl?.previousElementSibling || primeRunsEl?.closest('.prime-stat')?.querySelector('.ps-lbl');
+  const primeAvgLbl = primeAvgEl?.previousElementSibling || primeAvgEl?.closest('.prime-stat')?.querySelector('.ps-lbl');
+  // More reliable label selectors
+  const primeStatEls = document.querySelectorAll('.prime-stat');
+  const primeLbl1 = primeStatEls[0]?.querySelector('.ps-lbl');
+  const primeLbl2 = primeStatEls[1]?.querySelector('.ps-lbl');
+
+  const impactDesc = document.querySelector('.impact-desc');
+
+  if (type === 'bowling') {
+    // ── Header quick-stats: Bowling mode ──
+    const totalWkts = getNum(p,'BOWLING','Tests','Wkts') + getNum(p,'BOWLING','ODIs','Wkts') + getNum(p,'BOWLING','T20Is','Wkts');
+    const allBowlAvgs = [getNum(p,'BOWLING','Tests','Ave'), getNum(p,'BOWLING','ODIs','Ave'), getNum(p,'BOWLING','T20Is','Ave')].filter(v => v > 0);
+    const bestBowlAvg = allBowlAvgs.length ? Math.min(...allBowlAvgs).toFixed(1) : '-';
+    const bestBowlEcon = Math.min(
+      ...[getNum(p,'BOWLING','Tests','Econ'), getNum(p,'BOWLING','ODIs','Econ'), getNum(p,'BOWLING','T20Is','Econ')].filter(v => v > 0)
+    ) || '-';
+
+    if (phRunsEl) phRunsEl.textContent = totalWkts > 0 ? totalWkts.toLocaleString() : '-';
+    if (phRunsLbl) phRunsLbl.textContent = 'Wickets';
+    if (phAvgEl) phAvgEl.textContent = bestBowlAvg;
+    if (phAvgLbl) phAvgLbl.textContent = 'Best Avg';
+    if (phSrEl) phSrEl.textContent = isFinite(bestBowlEcon) ? bestBowlEcon : '-';
+    if (phSrLbl) phSrLbl.textContent = 'Economy';
+
+    // ── Prime Phase: Bowling mode ──
+    if (primeYrsEl) primeYrsEl.textContent = 'Career Stats';
+    if (primeRunsEl) primeRunsEl.textContent = totalWkts > 0 ? totalWkts.toLocaleString() : '-';
+    if (primeLbl1) primeLbl1.textContent = 'Total Wickets';
+    if (primeAvgEl) primeAvgEl.textContent = bestBowlAvg;
+    if (primeLbl2) primeLbl2.textContent = 'Best Avg';
+
+    // ── Impact description ──
+    if (impactDesc) impactDesc.textContent = 'Calculated from bowling average, economy rate, wicket tally, and match-winning spells';
+
+    // Recalculate bowling impact
+    const bowlImpact = calculateBowlingImpact(p);
+    document.getElementById('impact-val').textContent = bowlImpact;
+    initializeImpactRing(bowlImpact);
+
+  } else {
+    // ── Header quick-stats: Batting mode (restore) ──
+    const totalRuns = getNum(p,'BATTING','Tests','Runs') + getNum(p,'BATTING','ODIs','Runs') + getNum(p,'BATTING','T20Is','Runs');
+    const allAvgs = [getNum(p,'BATTING','Tests','Ave'), getNum(p,'BATTING','ODIs','Ave'), getNum(p,'BATTING','T20Is','Ave')].filter(v => v > 0);
+    const bestAvg = allAvgs.length ? Math.max(...allAvgs).toFixed(1) : '-';
+    const bestSr = Math.max(getNum(p,'BATTING','T20Is','SR'), getNum(p,'BATTING','ODIs','SR')) || '-';
+
+    if (phRunsEl) phRunsEl.textContent = totalRuns > 0 ? totalRuns.toLocaleString() : '-';
+    if (phRunsLbl) phRunsLbl.textContent = 'Runs';
+    if (phAvgEl) phAvgEl.textContent = bestAvg;
+    if (phAvgLbl) phAvgLbl.textContent = 'Average';
+    if (phSrEl) phSrEl.textContent = bestSr > 0 ? bestSr : '-';
+    if (phSrLbl) phSrLbl.textContent = 'Strike Rate';
+
+    // ── Prime Phase: Batting mode (restore) ──
+    if (primeYrsEl) primeYrsEl.textContent = 'Career Stats';
+    if (primeRunsEl) primeRunsEl.textContent = totalRuns > 0 ? totalRuns.toLocaleString() : '-';
+    if (primeLbl1) primeLbl1.textContent = 'Total Runs';
+    if (primeAvgEl) primeAvgEl.textContent = bestAvg;
+    if (primeLbl2) primeLbl2.textContent = 'Average';
+
+    // ── Impact description ──
+    if (impactDesc) impactDesc.textContent = 'Calculated from average, strike rate, consistency, and match-winning contributions';
+
+    // Restore batting impact
+    const batImpact = calculateImpactScore(p);
+    document.getElementById('impact-val').textContent = batImpact;
+    initializeImpactRing(batImpact);
+  }
+}
 
 // Helper functions for parsing raw CSV values
 function getVal(p, prefix, format, stat) {
@@ -94,6 +194,10 @@ function loadPlayerProfile(p) {
   document.getElementById('prime-yrs').textContent = "Career Stats";
   document.getElementById('prime-runs').textContent = totalRuns > 0 ? totalRuns.toLocaleString() : '-';
   document.getElementById('prime-avg').textContent = bestAvg;
+  // Set initial label text for prime stats
+  const primeStatEls = document.querySelectorAll('.prime-stat');
+  if (primeStatEls[0]) primeStatEls[0].querySelector('.ps-lbl').textContent = 'Total Runs';
+  if (primeStatEls[1]) primeStatEls[1].querySelector('.ps-lbl').textContent = 'Average';
 
   // Stat cards
   const cards = [
@@ -116,6 +220,14 @@ function calculateImpactScore(p) {
   const runs = getNum(p, 'BATTING', 'Tests', 'Runs') + getNum(p, 'BATTING', 'ODIs', 'Runs');
   const wkts = getNum(p, 'BOWLING', 'Tests', 'Wkts') + getNum(p, 'BOWLING', 'ODIs', 'Wkts');
   let score = 40 + (runs / 200) + wkts;
+  return Math.min(Math.round(score), 99);
+}
+
+function calculateBowlingImpact(p) {
+  const wkts = getNum(p,'BOWLING','Tests','Wkts') + getNum(p,'BOWLING','ODIs','Wkts') + getNum(p,'BOWLING','T20Is','Wkts');
+  const allAvgs = [getNum(p,'BOWLING','Tests','Ave'), getNum(p,'BOWLING','ODIs','Ave'), getNum(p,'BOWLING','T20Is','Ave')].filter(v => v > 0);
+  const avgBonus = allAvgs.length ? Math.max(0, 35 - Math.min(...allAvgs)) : 0;
+  let score = 30 + (wkts / 8) + avgBonus;
   return Math.min(Math.round(score), 99);
 }
 
@@ -191,8 +303,25 @@ function initializeImpactRing(score) {
 /* ═══════════ CHARTS ═══════════ */
 const ACCENT_COLORS = ['#C9FF47','#FF4B26','#6366f1','#38bdf8','#f59e0b','#ec4899','#10b981','#a78bfa'];
 
-function initializeCharts(p) {
+function renderCharts(p, type) {
+  // Destroy old charts to prevent overlapping overlapping canvases
+  Object.keys(charts).forEach(key => {
+    if (charts[key]) {
+      charts[key].destroy();
+    }
+  });
+  
+  if (type === 'bowling') {
+    renderBowlingCharts(p);
+  } else {
+    renderBattingCharts(p);
+  }
+}
+
+function renderBattingCharts(p) {
   // 1. Intl Runs
+  const lblI = document.querySelector('[data-chart-id="international"]').previousElementSibling;
+  if(lblI) lblI.textContent = 'International Runs';
   const intlRuns = [getNum(p,'BATTING','Tests','Runs'), getNum(p,'BATTING','ODIs','Runs'), getNum(p,'BATTING','T20Is','Runs')];
   charts.international = makeDonut('chart-intl', { labels: ['Test', 'ODI', 'T20I'], data: intlRuns });
 
@@ -221,11 +350,59 @@ function initializeCharts(p) {
   const srs = [getNum(p,'BATTING','Tests','SR'), getNum(p,'BATTING','ODIs','SR'), getNum(p,'BATTING','T20Is','SR')];
   charts.peak = makeRadar('chart-peak', { labels: ['Test', 'ODI', 'T20I'], data: srs, label: 'Strike Rate' });
 
-  // 6. Wickets by Format
+  // 6. High Scores
   const lblW = document.querySelector('[data-chart-id="timeline"]').previousElementSibling;
-  if(lblW) lblW.textContent = 'Wickets Overview';
-  const wkts = [getNum(p,'BOWLING','Tests','Wkts'), getNum(p,'BOWLING','ODIs','Wkts'), getNum(p,'BOWLING','T20Is','Wkts'), getNum(p,'BOWLING','First-class','Wkts'), getNum(p,'BOWLING','List A','Wkts'), getNum(p,'BOWLING','T20s','Wkts')];
-  charts.timeline = makeBar('chart-timeline', { labels: ['Test','ODI','T20I','FC','List A','T20'], data: wkts, label: 'Wickets' });
+  if(lblW) lblW.textContent = 'Highest Scores By Format';
+  const hss = [getNum(p,'BATTING','Tests','HS'), getNum(p,'BATTING','ODIs','HS'), getNum(p,'BATTING','T20Is','HS'), getNum(p,'BATTING','First-class','HS'), getNum(p,'BATTING','List A','HS'), getNum(p,'BATTING','T20s','HS')];
+  charts.timeline = makeBar('chart-timeline', { labels: ['Test','ODI','T20I','FC','List A','T20'], data: hss, label: 'High Score' });
+}
+
+function renderBowlingCharts(p) {
+  // 1. Intl Wickets
+  const lblI = document.querySelector('[data-chart-id="international"]').previousElementSibling;
+  if(lblI) lblI.textContent = 'International Wickets';
+  const intlWkts = [getNum(p,'BOWLING','Tests','Wkts'), getNum(p,'BOWLING','ODIs','Wkts'), getNum(p,'BOWLING','T20Is','Wkts')];
+  charts.international = makeDonut('chart-intl', { labels: ['Test', 'ODI', 'T20I'], data: intlWkts });
+
+  // 2. Domestic Wickets
+  const lblDOM = document.querySelector('[data-chart-id="iplTeams"]').previousElementSibling;
+  if(lblDOM) lblDOM.textContent = 'Domestic Wickets';
+  const domWkts = [getNum(p,'BOWLING','First-class','Wkts'), getNum(p,'BOWLING','List A','Wkts'), getNum(p,'BOWLING','T20s','Wkts')];
+  charts.iplTeams = makeBar('chart-ipl', { labels: ['FC', 'List A', 'T20s'], data: domWkts, label: 'Wickets' });
+
+  // 3. Milestones (4w/5w)
+  const lblM = document.querySelector('[data-chart-id="iplOpposition"]').previousElementSibling;
+  if(lblM) lblM.textContent = 'Hauls (4W & 5W)';
+  const fours = getNum(p,'BOWLING','Tests','4w')+getNum(p,'BOWLING','ODIs','4w')+getNum(p,'BOWLING','T20Is','4w')+getNum(p,'BOWLING','First-class','4w')+getNum(p,'BOWLING','List A','4w')+getNum(p,'BOWLING','T20s','4w');
+  const fives = getNum(p,'BOWLING','Tests','5w')+getNum(p,'BOWLING','ODIs','5w')+getNum(p,'BOWLING','T20Is','5w')+getNum(p,'BOWLING','First-class','5w')+getNum(p,'BOWLING','List A','5w')+getNum(p,'BOWLING','T20s','5w');
+  charts.iplOpposition = makeDonut('chart-opp', { labels: ['4 Wickets', '5 Wickets'], data: [fours, fives] });
+
+  // 4. Bowling Averages
+  const lblA = document.querySelector('[data-chart-id="ranking"]').previousElementSibling;
+  if(lblA) lblA.textContent = 'Bowling Averages';
+  const avgs = [getNum(p,'BOWLING','Tests','Ave'), getNum(p,'BOWLING','ODIs','Ave'), getNum(p,'BOWLING','T20Is','Ave')];
+  charts.ranking = makeBar('chart-rank', { labels: ['Test', 'ODI', 'T20I'], data: avgs, label: 'Average' });
+
+  // 5. Economy Rates
+  const lblS = document.querySelector('[data-chart-id="peak"]').previousElementSibling;
+  if(lblS) lblS.textContent = 'Economy Rates';
+  const econs = [getNum(p,'BOWLING','Tests','Econ'), getNum(p,'BOWLING','ODIs','Econ'), getNum(p,'BOWLING','T20Is','Econ')];
+  charts.peak = makeRadar('chart-peak', { labels: ['Test', 'ODI', 'T20I'], data: econs, label: 'Economy' });
+
+  // 6. Career Wise Wickets
+  const lblW = document.querySelector('[data-chart-id="timeline"]').previousElementSibling;
+  if(lblW) lblW.textContent = 'Career Wickets By Format';
+  
+  const careerWkts = [
+    getNum(p,'BOWLING','Tests','Wkts'), 
+    getNum(p,'BOWLING','ODIs','Wkts'), 
+    getNum(p,'BOWLING','T20Is','Wkts'), 
+    getNum(p,'BOWLING','First-class','Wkts'), 
+    getNum(p,'BOWLING','List A','Wkts'), 
+    getNum(p,'BOWLING','T20s','Wkts')
+  ];
+  
+  charts.timeline = makeBar('chart-timeline', { labels: ['Test','ODI','T20I','FC','List A','T20'], data: careerWkts, label: 'Total Wickets' });
 }
 
 function makeDonut(id, cfg) {

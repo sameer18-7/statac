@@ -224,6 +224,51 @@ body {
   border:1px solid rgba(201,255,71,.22); background:rgba(201,255,71,.05);
   border-radius:999px; padding:5px 14px;
 }
+.dash-header-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Tabs */
+.dashboard-tabs {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.dash-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: var(--font-cond);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+}
+
+.dash-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, .04);
+}
+
+.dash-tab.active {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 10px rgba(201, 255, 71, .3);
+}
+
 .dash-heading {
   font-family:var(--font-disp); font-size:clamp(32px,3.5vw,52px);
   letter-spacing:.04em; line-height:1; color:var(--text);

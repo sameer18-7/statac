@@ -323,6 +323,14 @@ body {
   gap: 32px;
   flex-wrap: wrap;
   margin-bottom: 24px;
+  position: sticky;
+  top: 62px;  /* below navbar height */
+  z-index: 100;
+  background: var(--bg);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .format-tabs {

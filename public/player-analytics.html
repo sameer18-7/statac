@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="player-analytics.css">
+  <link rel="stylesheet" href="css/player-analytics.css">
 </head>
 <body>
   <!-- ███ NAVBAR (STATAC identical) ███ -->
@@ -19,7 +19,7 @@
       <li><a href="statac.html">Home</a></li>
       <li><a href="player-analytics.html" class="active">Analytics</a></li>
       <li><a href="compare.html">Compare</a></li>
-      <li><a href="news.html">News</a></li>
+      <li><a href="rankings.html">Rankings</a></li>
     </ul>
     <button class="nav-cta">Pro Access</button>
   </nav>
@@ -116,7 +116,14 @@
       <div class="dash-title-row reveal">
         <span class="dash-tag">Pro Dashboard</span>
       </div>
-      <h2 class="dash-heading reveal">PERFORMANCE <em>ANALYTICS</em></h2>
+
+      <div class="dash-header-split reveal">
+        <h2 class="dash-heading">PERFORMANCE <em>ANALYTICS</em></h2>
+        <div class="dashboard-tabs">
+          <button class="dash-tab active" data-type="batting">BATTING</button>
+          <button class="dash-tab" data-type="bowling">BOWLING</button>
+        </div>
+      </div>
 
       <!-- Impact + Prime Row -->
       <div class="top-row reveal">
@@ -250,7 +257,7 @@
     <div class="foot-copy">© SamxSTATAC</div>
   </footer>
 
-  <script src="player-analytics.js"></script>
-  <script src="auth.js"></script>
+  <script src="js/player-analytics.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>
