@@ -218,13 +218,13 @@ function updateComparison() {
 
   mainEl.style.display = 'block';
   refreshTable();
-  renderCompareCharts(activePlayers);
 }
 
 function refreshTable() {
   const activePlayers = players.filter(p => p !== null);
   if (activePlayers.length < 2) return;
   renderCompareTable(activePlayers, activeFormat, activeType);
+  renderCompareCharts(activePlayers, activeFormat, activeType);
 }
 
 /* ═══════════ COMPARE TABLE (Single Format) ═══════════ */
@@ -265,80 +265,146 @@ const PLAYER_COLORS = [
   { bg: 'rgba(99,102,241,.7)', border: '#6366f1' }
 ];
 
-function renderCompareCharts(activePlayers) {
+/* ─── Chart config definitions per type ─── */
+function getChartConfigs(type, format) {
+  const isBatting = type === 'BATTING';
+
+  if (isBatting) {
+    return [
+      {
+        id: 'chart-runs',
+        title: `Runs — ${format}`,
+        chartType: 'bar',
+        stat: 'Runs',
+        format: format
+      },
+      {
+        id: 'chart-avg',
+        title: `Batting Average — ${format}`,
+        chartType: 'bar',
+        stat: 'Ave',
+        format: format
+      },
+      {
+        id: 'chart-sr',
+        title: `Strike Rate — ${format}`,
+        chartType: 'radar',
+        stat: 'SR',
+        format: format
+      },
+      {
+        id: 'chart-wkts',
+        title: `Boundaries (4s vs 6s) — ${format}`,
+        chartType: 'bar',
+        multiStat: ['4s', '6s'],
+        format: format
+      },
+      {
+        id: 'chart-milestones',
+        title: `Centuries & Fifties — ${format}`,
+        chartType: 'bar',
+        multiStat: ['100', '50'],
+        format: format
+      }
+    ];
+  } else {
+    return [
+      {
+        id: 'chart-runs',
+        title: `Wickets — ${format}`,
+        chartType: 'bar',
+        stat: 'Wkts',
+        format: format
+      },
+      {
+        id: 'chart-avg',
+        title: `Bowling Average — ${format}`,
+        chartType: 'bar',
+        stat: 'Ave',
+        format: format
+      },
+      {
+        id: 'chart-sr',
+        title: `Economy Rate — ${format}`,
+        chartType: 'radar',
+        stat: 'Econ',
+        format: format
+      },
+      {
+        id: 'chart-wkts',
+        title: `Bowling Strike Rate — ${format}`,
+        chartType: 'bar',
+        stat: 'SR',
+        format: format
+      },
+      {
+        id: 'chart-milestones',
+        title: `4W & 5W Hauls — ${format}`,
+        chartType: 'bar',
+        multiStat: ['4w', '5w'],
+        format: format
+      }
+    ];
+  }
+}
+
+function renderCompareCharts(activePlayers, format, type) {
   // Destroy old charts
   Object.values(compareCharts).forEach(c => { if (c) c.destroy(); });
   compareCharts = {};
 
   const pNames = activePlayers.map(p => (p.NAME || 'Unknown').split(' ').pop());
+  const configs = getChartConfigs(type, format);
 
-  // 1. International Runs (grouped bar)
-  compareCharts.runs = makeGroupedBar('chart-runs', {
-    categories: ['Test', 'ODI', 'T20I'],
-    datasets: activePlayers.map((p, i) => ({
-      label: pNames[i],
-      data: [getNum(p,'BATTING','Tests','Runs'), getNum(p,'BATTING','ODIs','Runs'), getNum(p,'BATTING','T20Is','Runs')],
-      backgroundColor: PLAYER_COLORS[i].bg,
-      borderColor: PLAYER_COLORS[i].border,
-      borderWidth: 2,
-      borderRadius: 6
-    }))
-  });
+  configs.forEach(cfg => {
+    // Update the chart card title
+    const canvas = document.getElementById(cfg.id);
+    if (!canvas) return;
+    const titleEl = canvas.closest('.chart-card')?.querySelector('.cc-title');
+    if (titleEl) titleEl.textContent = cfg.title;
 
-  // 2. Batting Averages (grouped bar)
-  compareCharts.avg = makeGroupedBar('chart-avg', {
-    categories: ['Test', 'ODI', 'T20I'],
-    datasets: activePlayers.map((p, i) => ({
-      label: pNames[i],
-      data: [getNum(p,'BATTING','Tests','Ave'), getNum(p,'BATTING','ODIs','Ave'), getNum(p,'BATTING','T20Is','Ave')],
-      backgroundColor: PLAYER_COLORS[i].bg,
-      borderColor: PLAYER_COLORS[i].border,
-      borderWidth: 2,
-      borderRadius: 6
-    }))
-  });
-
-  // 3. Strike Rates (radar overlay)
-  compareCharts.sr = makeOverlayRadar('chart-sr', {
-    categories: ['Test', 'ODI', 'T20I'],
-    datasets: activePlayers.map((p, i) => ({
-      label: pNames[i],
-      data: [getNum(p,'BATTING','Tests','SR'), getNum(p,'BATTING','ODIs','SR'), getNum(p,'BATTING','T20Is','SR')],
-      backgroundColor: PLAYER_COLORS[i].bg.replace('.7', '.15'),
-      borderColor: PLAYER_COLORS[i].border,
-      borderWidth: 2,
-      pointBackgroundColor: PLAYER_COLORS[i].border,
-      pointRadius: 4
-    }))
-  });
-
-  // 4. Wickets (grouped bar)
-  compareCharts.wkts = makeGroupedBar('chart-wkts', {
-    categories: ['Test', 'ODI', 'T20I'],
-    datasets: activePlayers.map((p, i) => ({
-      label: pNames[i],
-      data: [getNum(p,'BOWLING','Tests','Wkts'), getNum(p,'BOWLING','ODIs','Wkts'), getNum(p,'BOWLING','T20Is','Wkts')],
-      backgroundColor: PLAYER_COLORS[i].bg,
-      borderColor: PLAYER_COLORS[i].border,
-      borderWidth: 2,
-      borderRadius: 6
-    }))
-  });
-
-  // 5. Centuries & Fifties (grouped bar)
-  compareCharts.milestones = makeGroupedBar('chart-milestones', {
-    categories: ['100s', '50s'],
-    datasets: activePlayers.map((p, i) => ({
-      label: pNames[i],
-      data: [
-        getNum(p,'BATTING','Tests','100')+getNum(p,'BATTING','ODIs','100')+getNum(p,'BATTING','T20Is','100'),
-        getNum(p,'BATTING','Tests','50')+getNum(p,'BATTING','ODIs','50')+getNum(p,'BATTING','T20Is','50')
-      ],
-      backgroundColor: PLAYER_COLORS[i].bg,
-      borderColor: PLAYER_COLORS[i].border,
-      borderWidth: 2,
-      borderRadius: 6
-    }))
+    if (cfg.multiStat) {
+      // Grouped bar with multiple stat categories (e.g. 100s & 50s, or 4w & 5w)
+      compareCharts[cfg.id] = makeGroupedBar(cfg.id, {
+        categories: cfg.multiStat,
+        datasets: activePlayers.map((p, i) => ({
+          label: pNames[i],
+          data: cfg.multiStat.map(s => getNum(p, type, format, s)),
+          backgroundColor: PLAYER_COLORS[i].bg,
+          borderColor: PLAYER_COLORS[i].border,
+          borderWidth: 2,
+          borderRadius: 6
+        }))
+      });
+    } else if (cfg.chartType === 'radar') {
+      // Radar chart — show the stat across all 3 international formats for comparison
+      const intlFormats = ['Tests', 'ODIs', 'T20Is'];
+      compareCharts[cfg.id] = makeOverlayRadar(cfg.id, {
+        categories: ['Test', 'ODI', 'T20I'],
+        datasets: activePlayers.map((p, i) => ({
+          label: pNames[i],
+          data: intlFormats.map(f => getNum(p, type, f, cfg.stat)),
+          backgroundColor: PLAYER_COLORS[i].bg.replace('.7', '.15'),
+          borderColor: PLAYER_COLORS[i].border,
+          borderWidth: 2,
+          pointBackgroundColor: PLAYER_COLORS[i].border,
+          pointRadius: 4
+        }))
+      });
+    } else {
+      // Single stat bar chart — one bar per player for the selected format
+      compareCharts[cfg.id] = makeGroupedBar(cfg.id, {
+        categories: pNames,
+        datasets: [{
+          label: cfg.stat,
+          data: activePlayers.map(p => getNum(p, type, format, cfg.stat)),
+          backgroundColor: activePlayers.map((_, i) => PLAYER_COLORS[i].bg),
+          borderColor: activePlayers.map((_, i) => PLAYER_COLORS[i].border),
+          borderWidth: 2,
+          borderRadius: 6
+        }]
+      });
+    }
   });
 }
 
